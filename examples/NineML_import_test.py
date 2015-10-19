@@ -154,6 +154,7 @@ def get_Izh_FS_component():
             al.Parameter('Cm', un.capacitance)],
         analog_ports=[
             al.AnalogReducePort('iSyn', un.current, operator="+"),
+            al.AnalogReducePort('iExt', un.current, operator="+"),
             al.AnalogSendPort('U', un.current),
             al.AnalogSendPort('V', un.voltage)],
         event_ports=[
@@ -175,7 +176,7 @@ def get_Izh_FS_component():
                 'dV/dt = V_deriv',
                 transitions=[al.On('V > Vb', to="subthreshold")],
                 name="subVb")],
-        aliases=["V_deriv := (k * (V - Vr) * (V - Vt) - U + iSyn) / Cm"])
+        aliases=["V_deriv := (k * (V - Vr) * (V - Vt) - U + iExt + iSyn) / Cm"])  # @IgnorePep8
     return izhi_fs
 
 
@@ -462,7 +463,7 @@ def test_Izh_FS(Iexts=None):
     # Convert to PyDSTool.ModelSpec and create HybridModel object
     # Provide extra parameter Isyn which is missing from component definition
     # in absence of any synaptic inputs coupled to the model membrane
-    izh = get_nineml_model(c, 'izh_9ML', extra_args=[Par('Iext'), Par('Isyn')],
+    izh = get_nineml_model(c, 'izh_9ML', extra_args=[Par('iSyn'), Par('iExt')],
                             max_t=100)
 
     if Iexts is None:
@@ -477,8 +478,8 @@ def test_Izh_FS(Iexts=None):
              algparams={'init_step': 0.03})
 
     for Iext in Iexts:
-        izh.set(pars={'Iext': Iext})
-        name = 'Iext=%.1f'%(float(Iext))
+        izh.set(pars={'iExt': Iext})
+        name = 'Iext=%.1f' % (float(Iext))
         izh.compute(name, verboselevel=0)
         pts = izh.sample(name)
         evs = izh.getTrajEventTimes(name)['spikeOutput']
@@ -529,7 +530,6 @@ def test_compound():
     plt.ylabel('V')
 
 # ==========
-
 
 
 print("Testing Hodgkin Huxley cell model")
